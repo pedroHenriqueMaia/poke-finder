@@ -5,9 +5,11 @@ import { API_URL, LOADING_DELAY } from '@/helpers/constants'
 import { capitalize, padZeros, removeCharacter } from '@/helpers/filters'
 import { promiseTimeout, useFetch, useTitle } from '@vueuse/core'
 import { onMounted, watchEffect } from 'vue'
+import ButtonOrder from '@/components/ButtonOrder.vue'
 
 const props = defineProps({ search: String })
 const emit = defineEmits(['clear-search', 'item-clicked'])
+let orderBy = $ref('id')
 
 // Starting reactive object to handle the state of the API fetch.
 let fetchState = $ref({ isFetching: true, error: null, data: null })
@@ -31,7 +33,13 @@ const items = $computed(() => {
 
 // Computed list of API results filtered by search text.
 const filteredItems = $computed(() => {
-  return items.filter(
+  return items
+  .sort((a, b) => {
+      return orderBy == 'name'
+        ? a[orderBy].localeCompare(b[orderBy])
+        : a[orderBy] - b[orderBy]
+    })
+  .filter(
     (item) =>
       item.name.indexOf(props.search.toLowerCase()) > -1 ||
       item.id === Number(props.search)
@@ -50,6 +58,10 @@ const itensFoundMessage = $computed(() => {
 watchEffect(() =>
   useTitle(itensFoundMessage ? `${itensFoundMessage} - PokéDex` : 'PokéDex')
 )
+
+function OrderItens(param) {
+  orderBy = param
+}
 </script>
 
 <template>
@@ -91,6 +103,8 @@ watchEffect(() =>
         <span>Clear</span>
       </button>
     </div>
+
+    <ButtonOrder @order-by="OrderItens" />
 
     <ol
       class="flex flex-wrap justify-center gap-6 lg:gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-4"
